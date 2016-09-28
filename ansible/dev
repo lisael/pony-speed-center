@@ -1,0 +1,5 @@
+[codespeed]
+codespeed.lxc
+
+[environments]
+ponyspeed1.lxc "environment_name=lisael-laptop"

@@ -1,0 +1,89 @@
+---
+- hosts: codespeed
+  become: true
+  become_user: root
+  become_method: sudo
+  tasks:
+    - name: Install deb packages
+      action: apt name={{ item }} state=latest
+      with_items:
+        - git
+        - virtualenvwrapper
+        - python-pip
+
+    - name: pip-install pexpect
+      pip:
+        name: pexpect>=3.3
+
+    - name: Create codespeed user
+      user:
+        name: "{{ codespeed_user }}"
+        shell: /bin/bash
+
+    - name: Create base directory
+      file:
+        state: directory
+        path: "{{ codespeed_base_dir }}"
+        owner: "{{ codespeed_user }}"
+        group: "{{ codespeed_group }}"
+        mode: 0770
+
+
+- hosts: codespeed
+  become: true
+  become_user: "{{ codespeed_user }}"
+  become_method: sudo
+  tasks:
+    - name: Create {{ codespeed_venv }} virtualenv
+      command: virtualenv {{ codespeed_venv}}
+      args:
+        creates: "{{ codespeed_venv }}"
+
+    - name: Activate the virtualenv at login
+      lineinfile:
+        dest: /home/{{ codespeed_user }}/.bashrc
+        line: . {{ codespeed_venv }}/bin/activate
+    
+    - name: Activate the virtualenv at login
+      lineinfile:
+        dest: /home/{{ codespeed_user }}/.bashrc
+        line: cd {{ codespeed_src }}
+
+    - name: Install dependencies in {{ codespeed_venv }}
+      action: pip name={{item}} state=latest virtualenv={{codespeed_venv}}
+      with_items: [codespeed, isodate]
+
+    - name: Install codespeed from github
+      git:
+        repo: "{{ codespeed_repo }}"
+        dest: "{{ codespeed_src }}"
+        version: "{{ codespeed_version }}"
+        force: yes
+
+    - name: Create codespeed project
+      shell: cp -r {{ codespeed_src }}/sample_project {{ codespeed_project_dir }}
+      ignore_errors: yes
+
+    - name: Use {{ codespeed_project }} as default Django project
+      shell: sed -i 's/sample_project.settings/{{ codespeed_project }}.settings/' {{ codespeed_src }}/manage.py
+
+    - name: Configure codespeed
+      template:
+        src: settings.py
+        dest: "{{ codespeed_project_dir }}/settings.py"
+        owner: "{{ codespeed_user }}"
+        group: "{{ codespeed_group }}"
+        backup: yes
+
+    - name: Create {{ codespeed_project }} db
+      expect: 
+        chdir:  "{{ codespeed_src }}"
+        command: "{{ codespeed_python }} ./manage.py syncdb"
+        responses:
+          ".*Would you like to create one now?.*": "yes"
+          ".*Username \\(leave blank to use '.*": "{{ admin_name }}"
+          ".*Email address:.*": "{{ admin_email }}"
+          ".*Password:.*": "{{ admin_password }}"
+          ".*Password \\(again\\):.*": "{{ admin_password }}"
+        creates: "{{ codespeed_project_dir }}/data.db"
+        timeout: 60

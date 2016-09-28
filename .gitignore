@@ -1,0 +1,5 @@
+*.sw[m|n|o|p]
+runner/ponyc
+runner/runner/settings.py
+runner/suite/*/build/
+__pycache__

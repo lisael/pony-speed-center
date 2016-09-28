@@ -1,0 +1,27 @@
+---
+codespeed_user: codespeed
+codespeed_group: "{{ codespeed_user }}"
+codespeed_base_dir: /var/lib/codespeed
+codespeed_venv: "{{ codespeed_base_dir }}/venv"
+codespeed_python: "{{ codespeed_venv }}/bin/python"
+codespeed_src: "{{ codespeed_base_dir }}/src"
+codespeed_version: master
+codespeed_repo: https://github.com/tobami/codespeed.git 
+codespeed_project: ponyspeed
+codespeed_project_dir: "{{ codespeed_src }}/{{ codespeed_project }}"
+
+runner_user: "{{ codespeed_user }}"
+runner_group: "{{ codespeed_group }}"
+runner_base_dir: /var/lib/ponyspeed
+runner_script_dir: "{{ runner_base_dir }}/scripts"
+ponyc_src: "{{ runner_base_dir }}/ponyc"
+ponyc_repo: https://github.com/ponylang/ponyc
+
+admin_name: lisael
+admin_email: lisael@lisael.org
+admin_password: SuperSecret
+
+# Django settings
+DEBUG: True
+WEBSITE_NAME: PonySpeed
+DEF_BRANCH: master

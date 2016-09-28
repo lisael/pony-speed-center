@@ -1,0 +1,54 @@
+---
+- hosts: environments
+  become: true
+  become_user: root
+  #become_method: sudo
+  tasks:
+    - name: Install deb packages
+      action: apt name={{ item }} state=latest
+      with_items:
+        - git
+        - make
+        - make
+        - gcc
+        - g++
+        - zlib1g-dev
+        - libncurses5-dev
+        - libssl-dev
+        - llvm-3.5-dev
+        - llvm-3.6-dev
+        - llvm-3.7-dev
+        - llvm-3.8-dev
+        - llvm-3.9-dev
+        - llvm-4.0-dev
+
+    - name: Create codespeed user
+      user:
+        name: "{{ runner_user }}"
+        shell: /bin/bash
+
+    - name: Create base directory
+      file:
+        state: directory
+        path: "{{ runner_base_dir }}"
+        owner: "{{ runner_user }}"
+        group: "{{ runner_group }}"
+        mode: 0770
+
+- hosts: environments
+  become: true
+  become_user: "{{ runner_user }}"
+  become_method: sudo
+  tasks:
+    - name: Create scripts directory
+      file:
+        state: directory
+        path: "{{ runner_script_dir }}"
+        mode: 0770
+
+    - name: Clone ponyc from github
+      git:
+        repo: "{{ ponyc_repo }}"
+        dest: "{{ ponyc_src }}"
+        force: yes
+
